@@ -37,12 +37,17 @@ async def _ensure_demo_org(db: AsyncSession) -> Organization:
     return org
 
 
+def _open_access() -> bool:
+    """Open, login-less demo access (public portfolio demo or local dev)."""
+    return settings.demo_mode or settings.env == "development"
+
+
 async def api_key_auth(
     authorization: str | None = Header(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> Organization:
     if not authorization:
-        if settings.env == "development":
+        if _open_access():
             return await _ensure_demo_org(db)
         raise HTTPException(401, "Missing API key")
 
@@ -55,7 +60,7 @@ async def api_key_auth(
         )
     ).scalar_one_or_none()
     if row is None:
-        if settings.env == "development":
+        if _open_access():
             return await _ensure_demo_org(db)
         raise HTTPException(401, "Invalid API key")
     org = await db.get(Organization, row.org_id)
@@ -68,8 +73,8 @@ async def clerk_auth(
     authorization: str | None = Header(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> Organization:
-    # Production: verify JWT against settings.clerk_jwt_issuer, read org claim.
-    # Dev: fall back to the demo org so the dashboard works without Clerk.
-    if settings.env == "development" or not settings.clerk_jwt_issuer:
+    # Open demo / dev: serve the shared demo org with no login.
+    # Production with auth enabled: verify the Clerk JWT and read the org claim.
+    if _open_access() or not settings.clerk_jwt_issuer:
         return await _ensure_demo_org(db)
     raise HTTPException(501, "Clerk JWT verification not configured")

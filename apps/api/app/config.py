@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     env: str = "development"
+    # When true, the API serves a single shared "demo org" with no login —
+    # ideal for a public portfolio demo. Flip to false once real Clerk auth
+    # and per-org API keys are wired in.
+    demo_mode: bool = True
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     cors_origins: str = "http://localhost:3000"
