@@ -40,7 +40,7 @@ class Organization(Base):
     clerk_org_id: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     name: Mapped[str] = mapped_column(String)
     plan: Mapped[str] = mapped_column(String, default="community")  # community|pro|team|enterprise
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class User(Base):
@@ -50,7 +50,7 @@ class User(Base):
     org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     email: Mapped[str] = mapped_column(String)
     role: Mapped[str] = mapped_column(String, default="member")  # admin|member|approver|viewer
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class ApiKey(Base):
@@ -60,9 +60,9 @@ class ApiKey(Base):
     name: Mapped[str] = mapped_column(String)
     key_hash: Mapped[str] = mapped_column(String, unique=True, index=True)
     prefix: Mapped[str] = mapped_column(String)  # shown in UI, e.g. "acp_live_abc1"
-    last_used_at: Mapped[datetime | None] = mapped_column(DateTime)
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class Project(Base):
@@ -71,7 +71,7 @@ class Project(Base):
     org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     name: Mapped[str] = mapped_column(String)
     slug: Mapped[str] = mapped_column(String)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class Agent(Base):
@@ -81,7 +81,7 @@ class Agent(Base):
     project_id: Mapped[str | None] = mapped_column(ForeignKey("projects.id"))
     name: Mapped[str] = mapped_column(String)
     framework: Mapped[str] = mapped_column(String, default="custom")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class Run(Base):
@@ -100,9 +100,9 @@ class Run(Base):
     total_cost_usd: Mapped[float] = mapped_column(Numeric(12, 6), default=0)
     model: Mapped[str | None] = mapped_column(String)
     extra: Mapped[dict] = mapped_column("metadata", JSON, default=dict)
-    started_at: Mapped[datetime | None] = mapped_column(DateTime)
-    ended_at: Mapped[datetime | None] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
 
     spans: Mapped[list[Span]] = relationship(
         back_populates="run", cascade="all, delete-orphan", order_by="Span.sequence"
@@ -130,8 +130,8 @@ class Span(Base):
     cost_usd: Mapped[float] = mapped_column(Numeric(12, 6), default=0)
     error: Mapped[str | None] = mapped_column(Text)
     sequence: Mapped[int] = mapped_column(Integer, default=0)
-    started_at: Mapped[datetime | None] = mapped_column(DateTime)
-    ended_at: Mapped[datetime | None] = mapped_column(DateTime)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     run: Mapped[Run] = relationship(back_populates="spans")
 
@@ -144,7 +144,7 @@ class Evaluation(Base):
     type: Mapped[str] = mapped_column(String)
     # exact|json_schema|forbidden_tool|tool_sequence|citation|custom_python|llm_judge
     config: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class EvalResult(Base):
@@ -156,7 +156,7 @@ class EvalResult(Base):
     passed: Mapped[bool] = mapped_column(Boolean)
     score: Mapped[float | None] = mapped_column(Float)
     details: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class Policy(Base):
@@ -169,7 +169,7 @@ class Policy(Base):
     config: Mapped[dict] = mapped_column(JSON, default=dict)
     action: Mapped[str] = mapped_column(String, default="flag")  # log|flag|block|require_approval
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class PolicyViolation(Base):
@@ -182,7 +182,7 @@ class PolicyViolation(Base):
     severity: Mapped[str] = mapped_column(String, default="medium")
     details: Mapped[dict] = mapped_column(JSON, default=dict)
     status: Mapped[str] = mapped_column(String, default="open")  # open|acknowledged|resolved
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
 
 
 class Approval(Base):
@@ -195,8 +195,8 @@ class Approval(Base):
     action_payload: Mapped[dict] = mapped_column(JSON, default=dict)
     risk_reason: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String, default="pending")  # pending|approved|rejected|expired
-    requested_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
-    resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     resolved_by: Mapped[str | None] = mapped_column(String)
     reason: Mapped[str | None] = mapped_column(Text)
 
@@ -213,4 +213,4 @@ class AuditLog(Base):
     before: Mapped[dict | None] = mapped_column(JSON)
     after: Mapped[dict | None] = mapped_column(JSON)
     ip: Mapped[str | None] = mapped_column(String)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
