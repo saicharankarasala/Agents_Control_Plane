@@ -1,0 +1,92 @@
+# Production stack for a VPS that ALREADY runs Traefik (e.g. Hostinger's
+# "Docker and Traefik" template). No Caddy — the existing Traefik terminates
+# HTTPS and routes ${API_DOMAIN} to the API via Docker labels.
+#
+#   docker compose -f docker-compose.traefik.yml up -d --build
+#
+# Requires Traefik configured with: docker provider, entrypoint `websecure`,
+# and an ACME certresolver named `letsencrypt` (the Hostinger default).
+# Postgres/Redis/Qdrant stay private on the `acpnet` bridge; only the API is
+# exposed, and only through Traefik.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-acp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-acp}
+      POSTGRES_DB: ${POSTGRES_DB:-acp}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [acpnet]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-acp}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    networks: [acpnet]
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks: [acpnet]
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: ../../infra/docker/api.Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-acp}:${POSTGRES_PASSWORD:-acp}@postgres:5432/${POSTGRES_DB:-acp}
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      ENV: production
+    networks: [acpnet]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=acpnet"
+      - "traefik.http.routers.acpapi.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.acpapi.entrypoints=websecure"
+      - "traefik.http.routers.acpapi.tls.certresolver=letsencrypt"
+      - "traefik.http.services.acpapi.loadbalancer.server.port=8000"
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: ../../infra/docker/api.Dockerfile
+    command: arq app.workers.tasks.WorkerSettings
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-acp}:${POSTGRES_PASSWORD:-acp}@postgres:5432/${POSTGRES_DB:-acp}
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      ENV: production
+    networks: [acpnet]
+    depends_on:
+      - api
+      - redis
+    restart: unless-stopped
+
+networks:
+  acpnet:
+    name: acpnet
+
+volumes:
+  pgdata:
+  redisdata:
+  qdrant_storage:
