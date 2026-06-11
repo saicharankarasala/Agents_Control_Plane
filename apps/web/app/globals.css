@@ -99,3 +99,8 @@ body {
 @keyframes scan { 0% { left: -10%; } 100% { left: 110%; } }
 
 .tabular { font-variant-numeric: tabular-nums; }
+
+/* Bloomberg-style scrolling ticker */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee-track { display: inline-flex; white-space: nowrap; animation: marquee 32s linear infinite; }
+.marquee-wrap:hover .marquee-track { animation-play-state: paused; }
