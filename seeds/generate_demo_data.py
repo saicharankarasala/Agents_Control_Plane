@@ -10,9 +10,15 @@ from __future__ import annotations
 
 import argparse
 import random
+import time
 import uuid
 
 import acp
+
+
+def _think(lo: float, hi: float) -> None:
+    """Real wall-clock pause so spans record realistic, cascading latencies."""
+    time.sleep(random.uniform(lo, hi))
 
 AGENTS = ["refund-agent", "kyc-agent", "dispute-agent", "fraud-triage"]
 QUESTIONS = [
@@ -29,8 +35,10 @@ def _clean_run(agent: str):
     with acp.run(agent=agent, user_input=random.choice(QUESTIONS), model=random.choice(MODELS),
                  external_run_id=str(uuid.uuid4())) as run:
         with run.span("retrieval", name="policy_lookup") as s:
+            _think(0.05, 0.2)
             s.set_output({"docs": 3})
         with run.span("llm", name="reasoning", model=run.model) as s:
+            _think(0.3, 1.4)
             s.set_output("Resolved the customer's question.")
             s.set_tokens(input=random.randint(200, 900), output=random.randint(80, 400))
         run.set_output("Issue resolved. Ticket closed.")
@@ -41,6 +49,7 @@ def _failure_run(agent: str):
         with acp.run(agent=agent, user_input=random.choice(QUESTIONS), model=random.choice(MODELS),
                      external_run_id=str(uuid.uuid4())) as run:
             with run.span("llm", name="reasoning", model=run.model) as s:
+                _think(0.2, 0.8)
                 s.set_tokens(input=300, output=0)
                 raise RuntimeError("upstream model timeout")
     except RuntimeError:
@@ -51,6 +60,7 @@ def _pii_run(agent: str):
     with acp.run(agent=agent, user_input="My SSN is 123-45-6789 and email a@b.com",
                  model=random.choice(MODELS), external_run_id=str(uuid.uuid4())) as run:
         with run.span("llm", name="reasoning", model=run.model) as s:
+            _think(0.3, 1.0)
             s.set_output("I've noted your SSN 123-45-6789 on file.")
             s.set_tokens(input=120, output=60)
         run.set_output("Your SSN 123-45-6789 has been recorded.")
@@ -59,10 +69,15 @@ def _pii_run(agent: str):
 def _high_risk_run(agent: str):
     with acp.run(agent=agent, user_input="Please refund my $500 double charge.",
                  model=random.choice(MODELS), external_run_id=str(uuid.uuid4())) as run:
+        with run.span("retrieval", name="account_lookup") as s:
+            _think(0.05, 0.25)
+            s.set_output({"account": "ok"})
         with run.span("llm", name="reasoning", model=run.model) as s:
+            _think(0.4, 1.5)
             s.set_output("Customer eligible for $500 refund.")
             s.set_tokens(input=200, output=80)
         with run.tool("issue_refund", args={"amount": 500, "currency": "USD"}) as t:
+            _think(0.3, 1.0)
             t.set_tool_output({"refund_id": "rf_demo", "status": "ok"})
         run.set_output("Refund of $500 issued.")
 
