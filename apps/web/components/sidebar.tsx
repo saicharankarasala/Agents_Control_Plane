@@ -33,13 +33,16 @@ export function Sidebar() {
         key={href}
         href={href}
         className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all",
           active
-            ? "bg-accent text-foreground"
+            ? "bg-[hsl(var(--primary)/0.12)] text-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.3)]"
             : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
         )}
       >
-        <Icon size={17} />
+        {active && (
+          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[hsl(var(--primary))] shadow-[0_0_8px_hsl(var(--primary))]" />
+        )}
+        <Icon size={17} className={active ? "text-[hsl(var(--primary))]" : ""} />
         {label}
       </Link>
     );
