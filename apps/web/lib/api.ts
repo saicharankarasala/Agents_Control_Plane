@@ -105,7 +105,21 @@ export interface AuditLog {
   created_at: string | null;
 }
 
+export interface Analytics {
+  totals: { runs: number; cost: number; tokens: number; avg_latency: number; failed: number; error_rate: number };
+  daily: { date: string; runs: number; cost: number; avg_latency: number; tokens: number }[];
+  by_status: { status: string; count: number }[];
+  by_model: { model: string; count: number }[];
+  by_agent: { agent_id: string; runs: number; cost: number; avg_latency: number }[];
+}
+
+const EMPTY_ANALYTICS: Analytics = {
+  totals: { runs: 0, cost: 0, tokens: 0, avg_latency: 0, failed: 0, error_rate: 0 },
+  daily: [], by_status: [], by_model: [], by_agent: [],
+};
+
 export const api = {
+  analytics: (days = 14) => get<Analytics>(`/v1/analytics?days=${days}`, EMPTY_ANALYTICS),
   overview: () =>
     get<Overview>("/v1/overview", {
       total_runs: 0, error_rate: 0, total_cost_usd: 0,

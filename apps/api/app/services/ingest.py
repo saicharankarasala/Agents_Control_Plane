@@ -49,6 +49,8 @@ async def ingest_batch(db: AsyncSession, org_id: str, batch: TraceBatch) -> Run:
     run.total_cost_usd = batch.run.total_cost_usd
     run.started_at = batch.run.started_at
     run.ended_at = batch.run.ended_at
+    if batch.run.created_at is not None:
+        run.created_at = batch.run.created_at
     await db.flush()
 
     # The SDK sends a full snapshot on each flush, so re-ingest must be

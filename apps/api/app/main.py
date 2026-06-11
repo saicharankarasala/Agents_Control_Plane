@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import init_models
-from app.routers import approvals, governance, overview, runs, traces
+from app.routers import analytics, approvals, governance, overview, runs, traces
 
 
 @asynccontextmanager
@@ -31,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (traces.router, runs.router, overview.router, approvals.router, governance.router):
+for r in (traces.router, runs.router, overview.router, approvals.router, governance.router, analytics.router):
     app.include_router(r)
 
 

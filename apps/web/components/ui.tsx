@@ -45,6 +45,33 @@ export function SeverityBadge({ severity }: { severity: string }) {
   );
 }
 
+export function MiniStat({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "good" | "warn" | "danger" | "info" }) {
+  const c = {
+    default: "text-foreground", good: "text-[hsl(145_95%_55%)]", warn: "text-amber-400",
+    danger: "text-red-400", info: "text-cyan-300",
+  }[tone];
+  return (
+    <div className="glass rounded-lg border border-border px-4 py-3">
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={`mt-1 font-mono text-xl font-semibold tabular ${c}`}>{value}</div>
+    </div>
+  );
+}
+
+export function Panel({ icon, title, right, children, className = "" }: {
+  icon?: React.ReactNode; title: string; right?: React.ReactNode; children: React.ReactNode; className?: string;
+}) {
+  return (
+    <Card className={className}>
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <h2 className="flex items-center gap-2 text-sm font-medium">{icon} {title}</h2>
+        {right}
+      </div>
+      {children}
+    </Card>
+  );
+}
+
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
     <div className="mb-6 flex items-start justify-between">

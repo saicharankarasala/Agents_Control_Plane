@@ -15,8 +15,9 @@ import { LiveChart } from "@/components/live-chart";
 import { LiveFeed } from "@/components/live-feed";
 import { MetricCard } from "@/components/metric-card";
 import { Ticker } from "@/components/ticker";
+import { RunsOverTime, DailyArea } from "@/components/timeseries";
 import { Card, SeverityBadge } from "@/components/ui";
-import { api, type Approval, type Overview, type RunRow, type Violation } from "@/lib/api";
+import { api, type Analytics, type Approval, type Overview, type RunRow, type Violation } from "@/lib/api";
 import { fmtCost, fmtMs, relTime } from "@/lib/utils";
 
 const REFRESH_MS = 4000;
@@ -61,6 +62,7 @@ const greenIcon = "text-[hsl(145_95%_50%)]";
 
 export default function OverviewPage() {
   const [ov, setOv] = useState<Overview>(EMPTY);
+  const [an, setAn] = useState<Analytics | null>(null);
   const [runs, setRuns] = useState<RunRow[]>([]);
   const [violations, setViolations] = useState<Violation[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
@@ -72,11 +74,11 @@ export default function OverviewPage() {
   useEffect(() => {
     let alive = true;
     async function pull() {
-      const [o, r, v, a] = await Promise.all([
-        api.overview(), api.runs("?limit=200"), api.violations("open"), api.approvals("pending"),
+      const [o, r, v, a, an2] = await Promise.all([
+        api.overview(), api.runs("?limit=200"), api.violations("open"), api.approvals("pending"), api.analytics(14),
       ]);
       if (!alive) return;
-      setOv(o); setViolations(v.items); setApprovals(a.items);
+      setOv(o); setViolations(v.items); setApprovals(a.items); setAn(an2);
       const fresh = r.items.filter((x) => !seenRef.current.has(x.id)).map((x) => x.id);
       if (seenRef.current.size > 0 && fresh.length) {
         setNewIds(new Set(fresh));
@@ -145,6 +147,22 @@ export default function OverviewPage() {
         <MetricCard label="Spend" value={ov.total_cost_usd} decimals={2} prefix="$" icon={<DollarSign size={16} />} hint="token cost" spark={series(runs, (r) => r.total_cost_usd)} />
         <MetricCard label="Tokens" value={tokens} icon={<Cpu size={16} />} hint="consumed" spark={series(runs, (r) => r.total_tokens)} />
       </div>
+
+      {/* time series */}
+      {an && an.daily.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <Panel className="xl:col-span-2" icon={<BarChart3 size={15} className={greenIcon} />} title="Runs & Cost · 14 days"
+            right={<span className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-[hsl(145_95%_50%)]" /> runs</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[hsl(170_90%_55%)]" /> cost</span>
+            </span>}>
+            <div className="p-4"><RunsOverTime daily={an.daily} /></div>
+          </Panel>
+          <Panel icon={<Clock size={15} className={greenIcon} />} title="Avg Latency Trend">
+            <div className="p-4"><DailyArea daily={an.daily} field="avg_latency" color="hsl(170 90% 50%)" /></div>
+          </Panel>
+        </div>
+      )}
 
       {/* chart + percentiles */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">

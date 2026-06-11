@@ -42,11 +42,11 @@ def _post(endpoint: str, batch: dict) -> int:
         return r.status
 
 
-def _build() -> dict:
+def _build(when: datetime | None = None) -> dict:
     agent = random.choice(AGENTS)
     model = random.choice(MODELS)
     kind = random.choices(["clean", "fail", "pii", "refund"], weights=[6, 1, 1, 2])[0]
-    start = datetime.now(timezone.utc)
+    start = when or datetime.now(timezone.utc)
     spans: list[dict] = []
     t = start
     seq = 0
@@ -90,16 +90,16 @@ def _build() -> dict:
 
     total_latency = int((t - start).total_seconds() * 1000)
     user_input = "My SSN is 123-45-6789" if kind == "pii" else random.choice(QUESTIONS)
-    return {
-        "run": {
-            "external_run_id": str(uuid4()), "agent": agent, "framework": "custom",
-            "project": "banking-demo", "status": status, "user_input": user_input,
-            "final_output": final, "model": model, "metadata": {"source": "live-traffic"},
-            "total_latency_ms": total_latency, "total_tokens": in_tok + out_tok,
-            "total_cost_usd": cost, "started_at": _iso(start), "ended_at": _iso(t),
-        },
-        "spans": spans,
+    run = {
+        "external_run_id": str(uuid4()), "agent": agent, "framework": "custom",
+        "project": "banking-demo", "status": status, "user_input": user_input,
+        "final_output": final, "model": model, "metadata": {"source": "live-traffic"},
+        "total_latency_ms": total_latency, "total_tokens": in_tok + out_tok,
+        "total_cost_usd": cost, "started_at": _iso(start), "ended_at": _iso(t),
     }
+    if when is not None:
+        run["created_at"] = _iso(when)  # backfill historical timestamp
+    return {"run": run, "spans": spans}
 
 
 def main() -> None:
