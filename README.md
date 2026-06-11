@@ -11,6 +11,9 @@ LangChain, LlamaIndex, custom Python, or any LLM API.
 > built end-to-end: Python SDK → FastAPI ingestion → Postgres/Redis/Qdrant →
 > Next.js dashboard.
 
+**🔗 Live demo: https://agents-control-plane.venkatasaicharan.com** — open, no login (runs in `DEMO_MODE`).
+Frontend on Vercel · backend (Docker + Traefik HTTPS) on a self-managed VPS.
+
 ---
 
 ## What's here
@@ -19,8 +22,8 @@ LangChain, LlamaIndex, custom Python, or any LLM API.
 |---|---|---|
 | **Python SDK** (`agent-control-plane`) | `packages/sdk-python` | ✅ working + tested |
 | **FastAPI backend** (ingest, evals, governance, approvals, audit) | `apps/api` | ✅ working + tested |
-| **Next.js dashboard** | `apps/web` | 🚧 scaffolding |
-| **Docker Compose** (Postgres, Redis, Qdrant, API, worker) | `docker-compose.yml` | ✅ |
+| **Next.js dashboard** | `apps/web` | ✅ live |
+| **Docker Compose** (local + prod-with-Traefik) | `docker-compose*.yml` | ✅ |
 | **Demo seed data** (banking refund-agent persona) | `seeds/` | ✅ |
 
 ## Quickstart (zero infra — SQLite)
