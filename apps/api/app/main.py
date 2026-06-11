@@ -13,9 +13,11 @@ from app.routers import approvals, governance, overview, runs, traces
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Dev convenience: create tables on SQLite/dev. Prod uses Alembic migrations.
-    if settings.database_url.startswith("sqlite") or settings.env == "development":
-        await init_models()
+    # Ensure the schema exists on startup. create_all is idempotent (it only
+    # creates missing tables, never drops), so this is safe to run on every
+    # boot — dev SQLite and the VPS Postgres alike. Teams wanting versioned
+    # migrations can disable this and use `alembic upgrade head` instead.
+    await init_models()
     yield
 
 

@@ -1,0 +1,15 @@
+# Caddy reverse proxy — auto HTTPS via Let's Encrypt.
+# {$API_DOMAIN} is read from the environment (set in .env).
+# Caddy fetches and renews the TLS cert automatically; no manual certbot.
+
+{$API_DOMAIN} {
+	reverse_proxy api:8000
+
+	# Sensible production headers
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000;"
+	}
+
+	encode gzip
+}
