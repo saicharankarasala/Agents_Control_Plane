@@ -5,12 +5,12 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
 from app.deps import clerk_auth
-from app.models import Organization, Run
+from app.models import Agent, Organization, Run
 
 router = APIRouter(prefix="/v1", tags=["analytics"])
 
@@ -65,14 +65,20 @@ async def analytics(
         for d, n, c, lat, tok in daily_rows
     ]
 
-    # per-agent
+    # per-agent (joined to agent name, with success/fail breakdown)
     agent_rows = (
         await db.execute(
             select(
-                Run.agent_id, func.count(Run.id),
+                Agent.name, Run.agent_id, func.count(Run.id),
                 func.coalesce(func.sum(Run.total_cost_usd), 0),
                 func.coalesce(func.avg(Run.total_latency_ms), 0),
-            ).where(*scope).group_by(Run.agent_id)
+                func.sum(case((Run.status == "failed", 1), else_=0)),
+                func.sum(case((Run.status == "completed", 1), else_=0)),
+                func.coalesce(func.sum(Run.total_tokens), 0),
+            )
+            .join(Agent, Run.agent_id == Agent.id, isouter=True)
+            .where(*scope)
+            .group_by(Run.agent_id, Agent.name)
         )
     ).all()
 
@@ -100,7 +106,11 @@ async def analytics(
         "by_status": [{"status": s, "count": n} for s, n in status_rows],
         "by_model": [{"model": m or "unknown", "count": n} for m, n in model_rows],
         "by_agent": [
-            {"agent_id": a, "runs": n, "cost": round(float(c), 4), "avg_latency": int(lat)}
-            for a, n, c, lat in agent_rows
+            {
+                "agent": name or "unknown", "agent_id": aid, "runs": n,
+                "cost": round(float(c), 4), "avg_latency": int(lat),
+                "failed": int(fail or 0), "completed": int(done or 0), "tokens": int(tok or 0),
+            }
+            for name, aid, n, c, lat, fail, done, tok in agent_rows
         ],
     }

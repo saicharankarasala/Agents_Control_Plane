@@ -16,7 +16,28 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-AGENTS = ["refund-agent", "kyc-agent", "dispute-agent", "fraud-triage"]
+AGENTS = [
+    # banking / fintech
+    "refund-agent", "dispute-agent", "fraud-triage", "kyc-agent", "aml-screening",
+    "credit-underwriter", "wire-transfer-agent", "statement-assistant", "card-services",
+    "collections-agent",
+    # healthcare / payer
+    "claims-processor", "prior-auth-agent", "eligibility-checker", "denial-appeals",
+    "coding-assistant", "care-navigator",
+    # insurance
+    "policy-quote-agent", "claims-fnol", "underwriting-risk", "renewal-agent",
+    # support / saas
+    "support-tier1", "support-escalation", "billing-assistant", "onboarding-guide",
+    "churn-saver", "knowledge-bot",
+    # sales / marketing
+    "lead-qualifier", "proposal-writer", "crm-updater", "outreach-agent",
+    # legal / compliance
+    "contract-reviewer", "compliance-monitor", "policy-rag", "redaction-agent",
+    # devops / internal
+    "incident-responder", "log-analyzer", "deploy-approver", "runbook-agent",
+    # hr / ops
+    "recruiting-screener", "hr-helpdesk", "expense-auditor",
+]
 MODELS = ["claude-sonnet-4-6", "claude-haiku-4-5-20251001"]
 QUESTIONS = [
     "I was double charged on my card, please refund me.",
