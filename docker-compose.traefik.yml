@@ -82,6 +82,19 @@ services:
       - redis
     restart: unless-stopped
 
+  # Optional continuous demo traffic so the live dashboard keeps moving.
+  # Enable with:  docker compose -f docker-compose.traefik.yml --profile live up -d
+  traffic:
+    image: python:3.12-slim
+    command: python /app/live_traffic.py --endpoint http://api:8000 --interval 7
+    volumes:
+      - ./seeds/live_traffic.py:/app/live_traffic.py:ro
+    networks: [acpnet]
+    depends_on:
+      - api
+    profiles: [live]
+    restart: unless-stopped
+
 networks:
   acpnet:
     name: acpnet
