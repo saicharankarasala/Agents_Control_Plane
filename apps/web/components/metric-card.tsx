@@ -2,11 +2,11 @@ import { AnimatedNumber } from "./animated-number";
 import { Sparkline } from "./sparkline";
 
 const TONES = {
-  default: { text: "text-foreground", glow: "hsl(243 90% 68%)" },
-  good: { text: "text-emerald-400", glow: "hsl(152 76% 50%)" },
+  default: { text: "text-foreground", glow: "hsl(145 95% 50%)" },
+  good: { text: "text-[hsl(145_95%_55%)]", glow: "hsl(145 95% 50%)" },
   warn: { text: "text-amber-400", glow: "hsl(38 95% 55%)" },
-  danger: { text: "text-red-400", glow: "hsl(0 84% 62%)" },
-  info: { text: "text-cyan-400", glow: "hsl(190 90% 55%)" },
+  danger: { text: "text-red-400", glow: "hsl(0 90% 62%)" },
+  info: { text: "text-cyan-300", glow: "hsl(170 90% 50%)" },
 } as const;
 
 export function MetricCard({

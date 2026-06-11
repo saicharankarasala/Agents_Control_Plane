@@ -24,12 +24,12 @@ export function LiveChart({ runs }: { runs: RunRow[] }) {
       <AreaChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="gLat" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(190 90% 55%)" stopOpacity={0.45} />
-            <stop offset="100%" stopColor="hsl(190 90% 55%)" stopOpacity={0} />
+            <stop offset="0%" stopColor="hsl(145 95% 50%)" stopOpacity={0.5} />
+            <stop offset="100%" stopColor="hsl(145 95% 50%)" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="gCost" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(243 90% 68%)" stopOpacity={0.4} />
-            <stop offset="100%" stopColor="hsl(243 90% 68%)" stopOpacity={0} />
+            <stop offset="0%" stopColor="hsl(170 90% 50%)" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="hsl(170 90% 50%)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -49,9 +49,9 @@ export function LiveChart({ runs }: { runs: RunRow[] }) {
             name === "latency" ? [`${val} ms`, "latency"] : [`$${(val / 1000).toFixed(4)}`, "cost"]
           }
         />
-        <Area yAxisId="lat" type="monotone" dataKey="latency" stroke="hsl(190 90% 55%)" strokeWidth={2}
+        <Area yAxisId="lat" type="monotone" dataKey="latency" stroke="hsl(145 95% 50%)" strokeWidth={2}
           fill="url(#gLat)" animationDuration={700} />
-        <Area yAxisId="cost" type="monotone" dataKey="cost" stroke="hsl(243 90% 68%)" strokeWidth={2}
+        <Area yAxisId="cost" type="monotone" dataKey="cost" stroke="hsl(170 90% 50%)" strokeWidth={2}
           fill="url(#gCost)" animationDuration={700} />
       </AreaChart>
     </ResponsiveContainer>
