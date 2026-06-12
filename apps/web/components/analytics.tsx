@@ -90,7 +90,7 @@ export function BarList({ data, fmt }: { data: { label: string; value: number }[
 export function CostByAgent({ runs }: { runs: RunRow[] }) {
   const m = new Map<string, number>();
   for (const r of runs) m.set(r.agent ?? "?", (m.get(r.agent ?? "?") ?? 0) + r.total_cost_usd);
-  const data = [...m.entries()].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+  const data = [...m.entries()].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 8);
   return <BarList data={data} fmt={fmtCost} />;
 }
 

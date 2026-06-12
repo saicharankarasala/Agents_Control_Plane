@@ -190,14 +190,14 @@ export default function OverviewPage() {
       </div>
 
       {/* distributions */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <Panel icon={<PieIcon size={15} className={greenIcon} />} title="Model Usage"><ModelDonut runs={runs} /></Panel>
         <Panel icon={<BarChart3 size={15} className={greenIcon} />} title="Latency Distribution"><LatencyHistogram runs={runs} /></Panel>
         <Panel icon={<DollarSign size={15} className={greenIcon} />} title="Cost by Agent"><CostByAgent runs={runs} /></Panel>
       </div>
 
       {/* breakdowns */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <Panel className="lg:col-span-2" icon={<Users size={15} className={greenIcon} />} title="Agents"
           right={<span className="font-mono text-[11px] text-muted-foreground">runs · latency · cost · err</span>}>
           <AgentBreakdown runs={runs} />
@@ -212,7 +212,7 @@ export default function OverviewPage() {
       </Panel>
 
       {/* governance */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <Panel icon={<ShieldAlert size={15} className="text-amber-400" />} title="Violations by Type"><ViolationsByType violations={violations} /></Panel>
         <Panel icon={<ShieldAlert size={15} className="text-amber-400" />} title="Recent Violations"
           right={<Link href="/policies" className="text-xs text-muted-foreground hover:text-foreground">view all →</Link>}>

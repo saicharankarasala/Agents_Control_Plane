@@ -2,7 +2,7 @@
 
 import {
   Activity, AlertTriangle, ClipboardCheck, FileText, GitCompare,
-  LayoutDashboard, ListChecks, Settings, ShieldAlert, CreditCard,
+  LayoutDashboard, ListChecks, Settings, ShieldAlert, CreditCard, HeartPulse,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
+  { href: "/health", label: "Agent Health", icon: HeartPulse },
   { href: "/runs", label: "Agent Runs", icon: Activity },
   { href: "/evaluations", label: "Evaluations", icon: ListChecks },
   { href: "/policies", label: "Policy Center", icon: ShieldAlert },

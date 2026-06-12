@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { RunRow } from "@/lib/api";
 import { fmtCost, fmtMs } from "@/lib/utils";
 
@@ -20,10 +21,11 @@ export function AgentBreakdown({ runs }: { runs: RunRow[] }) {
     if (r.status === "failed") a.fail += 1;
     map.set(k, a);
   }
-  const rows = [...map.entries()]
+  const all = [...map.entries()]
     .map(([agent, a]) => ({ agent, ...a, avg: a.lat / a.n, errRate: a.fail / a.n }))
     .sort((x, y) => y.n - x.n);
-  const max = Math.max(1, ...rows.map((r) => r.n));
+  const rows = all.slice(0, 10);
+  const max = Math.max(1, ...all.map((r) => r.n));
 
   return (
     <div className="space-y-3 p-4">
@@ -52,6 +54,11 @@ export function AgentBreakdown({ runs }: { runs: RunRow[] }) {
           </span>
         </div>
       ))}
+      {all.length > rows.length && (
+        <Link href="/compare" className="block pt-1 text-center text-[11px] text-muted-foreground hover:text-[hsl(145_95%_60%)]">
+          +{all.length - rows.length} more agents · compare all →
+        </Link>
+      )}
     </div>
   );
 }
