@@ -164,6 +164,17 @@ export default function OverviewPage() {
         </div>
       )}
 
+      {an && an.daily.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Panel icon={<DollarSign size={15} className={greenIcon} />} title="Cost Trend · 14 days">
+            <div className="p-4"><DailyArea daily={an.daily} field="cost" color="hsl(145 95% 50%)" /></div>
+          </Panel>
+          <Panel icon={<Cpu size={15} className={greenIcon} />} title="Token Consumption · 14 days">
+            <div className="p-4"><DailyArea daily={an.daily} field="tokens" color="hsl(190 90% 55%)" /></div>
+          </Panel>
+        </div>
+      )}
+
       {/* chart + percentiles */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Panel className="xl:col-span-2" icon={<Zap size={15} className={greenIcon} />} title="Latency & Cost · recent runs"

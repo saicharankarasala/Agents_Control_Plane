@@ -3,28 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
+  /* Light theme — green-branded, high contrast */
+  --background: 150 30% 99%;
+  --foreground: 155 35% 9%;
+  --muted: 150 18% 95%;
+  --muted-foreground: 155 12% 34%;
   --card: 0 0% 100%;
-  --border: 214 32% 91%;
-  --primary: 243 75% 59%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222 47% 11%;
-  --grid: 214 32% 91%;
+  --border: 150 16% 87%;
+  --primary: 145 80% 34%;
+  --accent: 150 22% 93%;
+  --accent-foreground: 155 35% 9%;
+  --grid: 150 16% 90%;
 }
 
 .dark {
-  --background: 150 10% 3%;
-  --foreground: 150 12% 96%;
-  --muted: 150 8% 9%;
-  --muted-foreground: 150 6% 52%;
-  --card: 152 12% 5%;
-  --border: 150 10% 13%;
-  --primary: 145 95% 45%;   /* Robinhood neon green */
-  --accent: 150 10% 11%;
-  --accent-foreground: 150 12% 96%;
+  --background: 150 12% 3.5%;
+  --foreground: 150 16% 98%;          /* crisp near-white */
+  --muted: 150 9% 10%;
+  --muted-foreground: 150 10% 68%;    /* brighter secondary text */
+  --card: 152 13% 5.5%;
+  --border: 150 10% 15%;
+  --primary: 145 95% 50%;             /* neon green */
+  --accent: 150 10% 12%;
+  --accent-foreground: 150 16% 98%;
   --grid: 150 12% 9%;
 }
 
@@ -33,9 +34,18 @@
 }
 
 body {
-  background: hsl(var(--background));
+  background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* light-mode subtle grid + green glow */
+  background-image:
+    radial-gradient(900px circle at 12% -10%, hsl(145 80% 45% / 0.08), transparent 55%),
+    linear-gradient(hsl(var(--grid) / 0.7) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--grid) / 0.7) 1px, transparent 1px);
+  background-size: 100% 100%, 44px 44px, 44px 44px;
+  background-attachment: fixed;
 }
 
 /* Command-center backdrop: faint grid + radial glow */

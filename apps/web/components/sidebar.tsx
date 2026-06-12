@@ -50,15 +50,15 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card/40 p-3">
-      <div className="mb-6 flex items-center gap-2 px-2 pt-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--primary))] text-white">
+      <Link href="/" className="mb-6 flex items-center gap-2 rounded-md px-2 pt-2 pb-1 transition-colors hover:bg-accent/40" title="Back to home">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--primary))] text-black">
           <AlertTriangle size={16} />
         </div>
         <div className="leading-tight">
           <div className="text-sm font-semibold">Agent Control</div>
-          <div className="text-[11px] text-muted-foreground">Plane</div>
+          <div className="text-[11px] text-muted-foreground">Plane · home</div>
         </div>
-      </div>
+      </Link>
       <nav className="flex flex-1 flex-col gap-1">{NAV.map(item)}</nav>
       <nav className="flex flex-col gap-1 border-t border-border pt-3">{NAV_BOTTOM.map(item)}</nav>
     </aside>
