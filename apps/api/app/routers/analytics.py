@@ -82,6 +82,20 @@ async def analytics(
         )
     ).all()
 
+    # per-agent x day (for the latency heatmap)
+    agent_day_rows = (
+        await db.execute(
+            select(
+                Agent.name, func.date(Run.created_at), func.count(Run.id),
+                func.coalesce(func.avg(Run.total_latency_ms), 0),
+                func.sum(case((Run.status == "failed", 1), else_=0)),
+            )
+            .join(Agent, Run.agent_id == Agent.id, isouter=True)
+            .where(*scope, Run.created_at >= since)
+            .group_by(Agent.name, func.date(Run.created_at))
+        )
+    ).all()
+
     # by status
     status_rows = (
         await db.execute(
@@ -112,5 +126,10 @@ async def analytics(
                 "failed": int(fail or 0), "completed": int(done or 0), "tokens": int(tok or 0),
             }
             for name, aid, n, c, lat, fail, done, tok in agent_rows
+        ],
+        "by_agent_daily": [
+            {"agent": name or "unknown", "date": str(d), "runs": n,
+             "avg_latency": int(lat), "failed": int(fail or 0)}
+            for name, d, n, lat, fail in agent_day_rows
         ],
     }

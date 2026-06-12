@@ -111,6 +111,7 @@ export interface Analytics {
   by_status: { status: string; count: number }[];
   by_model: { model: string; count: number }[];
   by_agent: { agent: string; agent_id: string; runs: number; cost: number; avg_latency: number; failed: number; completed: number; tokens: number }[];
+  by_agent_daily?: { agent: string; date: string; runs: number; avg_latency: number; failed: number }[];
 }
 
 const EMPTY_ANALYTICS: Analytics = {

@@ -1,10 +1,11 @@
 "use client";
 
 import {
-  HeartPulse, AlertTriangle, CheckCircle2, XCircle, X, ChevronRight, Clock, Activity,
+  HeartPulse, AlertTriangle, CheckCircle2, XCircle, X, ChevronRight, Activity, Grid3x3, Flame,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { LatencyHeatmap } from "@/components/heatmap";
 import { Sparkline } from "@/components/sparkline";
 import { Card, MiniStat, Panel, StatusBadge } from "@/components/ui";
 import { agentInfo } from "@/lib/agents";
@@ -23,14 +24,15 @@ function health(a: Agent): { status: Health; reason: string } {
   return { status: "healthy", reason: "operating normally" };
 }
 
-const H_STYLE: Record<Health, { ring: string; text: string; dot: string; icon: typeof CheckCircle2 }> = {
-  healthy: { ring: "border-[hsl(145_95%_45%/0.3)]", text: "text-[hsl(145_95%_55%)]", dot: "bg-[hsl(145_95%_50%)]", icon: CheckCircle2 },
-  degraded: { ring: "border-amber-500/40", text: "text-amber-400", dot: "bg-amber-400", icon: AlertTriangle },
-  down: { ring: "border-red-500/50", text: "text-red-400", dot: "bg-red-400", icon: XCircle },
+const H_STYLE: Record<Health, { ring: string; text: string; dot: string; tile: string }> = {
+  healthy: { ring: "border-[hsl(145_95%_45%/0.3)]", text: "text-[hsl(145_95%_55%)]", dot: "bg-[hsl(145_95%_50%)]", tile: "hsl(145 95% 45%)" },
+  degraded: { ring: "border-amber-500/40", text: "text-amber-400", dot: "bg-amber-400", tile: "hsl(38 95% 52%)" },
+  down: { ring: "border-red-500/50", text: "text-red-400", dot: "bg-red-400", tile: "hsl(0 85% 55%)" },
 };
 
 export default function HealthPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [daily, setDaily] = useState<NonNullable<Analytics["by_agent_daily"]>>([]);
   const [lastSeen, setLastSeen] = useState<Record<string, string>>({});
   const [sel, setSel] = useState<Agent | null>(null);
 
@@ -40,6 +42,7 @@ export default function HealthPage() {
       const [an, r] = await Promise.all([api.analytics(14), api.runs("?limit=200")]);
       if (!alive) return;
       setAgents(an.by_agent.filter((x) => x.agent !== "unknown"));
+      setDaily(an.by_agent_daily ?? []);
       const seen: Record<string, string> = {};
       for (const run of r.items) if (run.agent && !seen[run.agent] && run.created_at) seen[run.agent] = run.created_at;
       setLastSeen(seen);
@@ -49,24 +52,69 @@ export default function HealthPage() {
     return () => { alive = false; clearInterval(iv); };
   }, []);
 
-  const ranked = [...agents].map((a) => ({ a, h: health(a) }))
-    .sort((x, y) => ({ down: 0, degraded: 1, healthy: 2 }[x.h.status] - { down: 0, degraded: 1, healthy: 2 }[y.h.status]));
+  const order = { down: 0, degraded: 1, healthy: 2 };
+  const ranked = [...agents].map((a) => ({ a, h: health(a) })).sort((x, y) => order[x.h.status] - order[y.h.status]);
   const counts = { healthy: 0, degraded: 0, down: 0 };
   ranked.forEach((r) => counts[r.h.status]++);
   const alerts = ranked.filter((r) => r.h.status !== "healthy");
+  const healthyPct = agents.length ? (counts.healthy / agents.length) * 100 : 100;
+  const heatAgents = [...agents].sort((a, b) => b.runs - a.runs).map((a) => a.agent);
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><HeartPulse size={22} className="text-[hsl(145_95%_55%)]" /> Agent Health</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Live health monitoring across {agents.length} agents · click an agent to inspect its pipeline</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            <HeartPulse size={22} className="text-[hsl(145_95%_55%)]" /> Agent Health
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[hsl(145_95%_45%/0.3)] bg-[hsl(145_95%_45%/0.1)] px-2.5 py-1 text-xs font-medium text-[hsl(145_95%_55%)]"><span className="live-dot" /> LIVE</span>
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">NOC view across {agents.length} agents · click any agent to inspect its pipeline</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <MiniStat label="Healthy" value={String(counts.healthy)} tone="good" />
-        <MiniStat label="Degraded" value={String(counts.degraded)} tone="warn" />
-        <MiniStat label="Down" value={String(counts.down)} tone={counts.down ? "danger" : "good"} />
+      {/* big status tiles */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="glass flex flex-col justify-center rounded-xl border-2 p-5"
+          style={{ borderColor: counts.down ? "hsl(0 85% 55% / 0.5)" : counts.degraded ? "hsl(38 95% 52% / 0.5)" : "hsl(145 95% 45% / 0.5)" }}>
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Fleet Health</span>
+          <span className={`mt-1 font-mono text-4xl font-bold ${healthyPct > 90 ? "text-[hsl(145_95%_55%)]" : healthyPct > 70 ? "text-amber-400" : "text-red-400"}`}>{healthyPct.toFixed(0)}%</span>
+        </div>
+        <BigTile label="Healthy" value={counts.healthy} color="hsl(145 95% 50%)" Icon={CheckCircle2} />
+        <BigTile label="Degraded" value={counts.degraded} color="hsl(38 95% 55%)" Icon={AlertTriangle} />
+        <BigTile label="Down" value={counts.down} color="hsl(0 85% 58%)" Icon={XCircle} />
       </div>
+
+      {/* status wall */}
+      <Panel icon={<Grid3x3 size={15} className="text-[hsl(145_95%_50%)]" />} title="Agent Status Wall"
+        right={<span className="flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[hsl(145_95%_50%)]" />healthy</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" />degraded</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-400" />down</span>
+        </span>}>
+        <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+          {ranked.map(({ a, h }) => {
+            const S = H_STYLE[h.status];
+            return (
+              <button key={a.agent_id ?? a.agent} onClick={() => setSel(a)} title={`${a.agent} · ${h.reason}`}
+                className="group relative flex h-16 flex-col justify-between overflow-hidden rounded-md border p-2 text-left transition-transform hover:scale-[1.04]"
+                style={{ borderColor: `${S.tile}66`, background: `${S.tile}14` }}>
+                <span className="truncate font-mono text-[10px] leading-tight text-foreground/90">{a.agent}</span>
+                <span className="flex items-center justify-between">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: S.tile, boxShadow: `0 0 8px ${S.tile}` }} />
+                  <span className="font-mono text-[9px] text-muted-foreground">{(a.runs ? (a.failed / a.runs) * 100 : 0).toFixed(0)}%e</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Panel>
+
+      {/* latency heatmap */}
+      <Panel icon={<Flame size={15} className="text-[hsl(38_95%_55%)]" />} title="Latency Heatmap · agents × days"
+        right={<span className="font-mono text-[11px] text-muted-foreground">top {Math.min(22, heatAgents.length)} by volume</span>}>
+        {daily.length > 0 ? <LatencyHeatmap daily={daily} agents={heatAgents} />
+          : <p className="px-4 py-8 text-center text-sm text-muted-foreground">No time-series data (redeploy backend for /v1/analytics by_agent_daily).</p>}
+      </Panel>
 
       {/* alerts */}
       <Panel icon={<AlertTriangle size={15} className="text-amber-400" />} title="Active Alerts"
@@ -74,13 +122,13 @@ export default function HealthPage() {
         {alerts.length === 0 ? (
           <div className="flex items-center gap-2 px-4 py-6 text-sm text-[hsl(145_95%_55%)]"><CheckCircle2 size={16} /> All agents healthy — no active alerts.</div>
         ) : (
-          <div className="divide-y divide-border/60">
+          <div className="max-h-72 divide-y divide-border/60 overflow-y-auto">
             {alerts.map(({ a, h }) => {
               const info = agentInfo(a.agent);
               return (
                 <button key={a.agent_id ?? a.agent} onClick={() => setSel(a)} className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm hover:bg-accent/40">
                   <span className="flex items-center gap-3">
-                    <span className={`h-2 w-2 rounded-full ${H_STYLE[h.status].dot}`} />
+                    <span className={`h-2 w-2 rounded-full ${H_STYLE[h.status].dot} animate-pulse`} />
                     <span className="font-mono">{a.agent}</span>
                     <span className="rounded px-1.5 py-0.5 text-[10px]" style={{ background: `${info.color}1f`, color: info.color }}>{info.domain}</span>
                   </span>
@@ -95,31 +143,19 @@ export default function HealthPage() {
         )}
       </Panel>
 
-      {/* health grid */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {ranked.map(({ a, h }) => {
-          const info = agentInfo(a.agent);
-          const S = H_STYLE[h.status];
-          const err = a.runs ? a.failed / a.runs : 0;
-          return (
-            <button key={a.agent_id ?? a.agent} onClick={() => setSel(a)} className={`glass glow-hover rounded-xl border ${S.ring} p-4 text-left`}>
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-sm font-medium">{a.agent}</span>
-                <span className={`flex items-center gap-1.5 text-xs font-medium ${S.text}`}><span className={`h-2 w-2 rounded-full ${S.dot} ${h.status !== "healthy" ? "animate-pulse" : ""}`} />{h.status}</span>
-              </div>
-              <div className="mt-0.5 text-[11px] text-muted-foreground">{info.domain}</div>
-              <div className="mt-3 grid grid-cols-2 gap-y-1.5 font-mono text-[11px] tabular">
-                <span className="text-muted-foreground">error</span><span className={`text-right ${err > 0.15 ? "text-red-400" : ""}`}>{(err * 100).toFixed(0)}%</span>
-                <span className="text-muted-foreground">latency</span><span className="text-right">{fmtMs(a.avg_latency)}</span>
-                <span className="text-muted-foreground">runs</span><span className="text-right">{fmtNum(a.runs)}</span>
-                <span className="text-muted-foreground">last seen</span><span className="text-right">{lastSeen[a.agent] ? relTime(lastSeen[a.agent]) : "—"}</span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
       {sel && <HealthDetail agent={sel} onClose={() => setSel(null)} />}
+    </div>
+  );
+}
+
+function BigTile({ label, value, color, Icon }: { label: string; value: number; color: string; Icon: typeof CheckCircle2 }) {
+  return (
+    <div className="glass flex items-center justify-between rounded-xl border border-border p-5">
+      <div>
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+        <div className="mt-1 font-mono text-4xl font-bold" style={{ color }}>{value}</div>
+      </div>
+      <Icon size={28} style={{ color, opacity: 0.4 }} />
     </div>
   );
 }
@@ -148,7 +184,7 @@ function HealthDetail({ agent, onClose }: { agent: Agent; onClose: () => void })
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
-      <Card className="mt-8 w-full max-w-3xl" >
+      <Card className="mt-8 w-full max-w-3xl">
         <div onClick={(e) => e.stopPropagation()}>
           <div className="flex items-start justify-between border-b border-border p-5">
             <div>
@@ -169,7 +205,6 @@ function HealthDetail({ agent, onClose }: { agent: Agent; onClose: () => void })
             <MiniStat label="Spend" value={fmtCost(agent.cost)} />
           </div>
 
-          {/* pipeline */}
           <div className="border-t border-border p-5">
             <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground"><Activity size={13} /> Pipeline · most recent run</div>
             {pipeline && pipeline.spans.length > 0 ? (
